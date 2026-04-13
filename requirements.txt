@@ -1,0 +1,9 @@
+smac==2.3.1
+hypershap==0.0.6
+streamlit==1.45.1
+plotly==6.7.0
+pandas==2.3.3
+scikit-learn==1.8.0
+numpy==2.4.3
+
+configspace
