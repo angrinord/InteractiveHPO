@@ -18,6 +18,6 @@ class BaseModel(ABC):
         config: dict,
         X_train, y_train,
         X_val, y_val,
-        metric_fn,
+        metrics: dict,   # {metric_name: callable}
         seed: int = 0,
-    ) -> float: ...
+    ) -> dict: ...       # {metric_name: score}

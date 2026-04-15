@@ -7,19 +7,20 @@ from hypershap import ExplanationTask, HyperSHAP
 class TrialResult:
     trial: int
     config: Dict[str, Any]
-    score: float            # metric value for this config
-    incumbent_score: float  # best score seen so far
+    scores: Dict[str, float]    # score for every metric
+    score: float                # primary metric score (used internally by optimizer)
+    incumbent_score: float      # best primary metric score seen up to this trial
     incumbent_config: Dict[str, Any]
 
 
 @dataclass
 class OptimizationResult:
     trials: List[TrialResult]
+    primary_metric: str
     best_config: Dict[str, Any]
     best_score: float
-    hyperparameter_importance: Optional[Dict[str, float]] = None
-    hyperparameter_importance_warning: Optional[str] = None
-    # Optimizer-specific state needed to resume a run (e.g. output directory path).
+    hyperparameter_importance: Dict[str, Dict[str, float]]          # metric → {hp: importance}
+    hyperparameter_importance_warning: Dict[str, Optional[str]]     # metric → warning or None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -34,7 +35,8 @@ class BaseOptimizer(ABC):
         model,
         X_train, y_train,
         X_val, y_val,
-        metric_fn,
+        metrics: dict,
+        primary_metric: str,
         n_trials: int,
         previous_result: Optional["OptimizationResult"] = None,
         seed: int = 0,
@@ -44,13 +46,10 @@ class BaseOptimizer(ABC):
         self,
         config_space,
         trials: List[TrialResult],
+        metric_name: str,
         seed: int = 0,
     ) -> tuple[Dict[str, float], Optional[str]]:
         """Estimate hyperparameter importance from a completed list of trials.
-
-        Optimizer-agnostic: reconstructs ConfigSpace Configuration objects
-        from the plain config dicts stored in each TrialResult, then tries
-        HyperSHAP followed by an RF-based fallback.
 
         Returns (importance_dict, warning_message).  warning_message is None
         when HyperSHAP succeeds.
@@ -64,7 +63,7 @@ class BaseOptimizer(ABC):
         for t in trials:
             try:
                 cfg = Configuration(config_space, values=t.config)
-                data.append((cfg, t.score))
+                data.append((cfg, t.scores[metric_name]))
             except Exception:
                 continue
 
@@ -79,7 +78,6 @@ class BaseOptimizer(ABC):
             task = ExplanationTask.from_data(config_space, data)
             hs = HyperSHAP(task)
             iv = hs.tunability()
-            # Extract per-feature (order-1) Shapley values; keys are (index,) tuples.
             order1 = iv.get_n_order(order=1).dict_values
             raw = {params[idx]: abs(val) for (idx,), val in order1.items()}
             total = sum(raw.values()) or 1.0

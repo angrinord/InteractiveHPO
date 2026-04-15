@@ -24,6 +24,8 @@ class _CollectCallback(Callback):
     initial_best_cost   — best cost seen before this run, so incumbent_score is
                           correct relative to the full history.
     initial_best_config — config that produced initial_best_cost.
+    scores_cache        — dict populated by target_fn mapping config_key → scores dict.
+    primary_metric      — name of the primary metric (cost = 1 - scores[primary_metric]).
     """
 
     def __init__(
@@ -32,17 +34,24 @@ class _CollectCallback(Callback):
         trial_offset: int = 0,
         initial_best_cost: float = float("inf"),
         initial_best_config: dict | None = None,
+        scores_cache: dict | None = None,
+        primary_metric: str = "",
     ):
         self.results: list[TrialResult] = []
         self._target_new_trials = target_new_trials
         self._trial_offset = trial_offset
         self._incumbent_cost = initial_best_cost
         self._incumbent_config = initial_best_config
+        self._scores_cache = scores_cache if scores_cache is not None else {}
+        self._primary_metric = primary_metric
 
     def on_tell_end(self, smbo, info, value):
         cost = float(value.cost) if not isinstance(value.cost, float) else value.cost
         config = dict(info.config)
         score = 1.0 - cost
+
+        config_key = tuple(sorted(config.items()))
+        all_scores = self._scores_cache.get(config_key, {self._primary_metric: score})
 
         if cost < self._incumbent_cost:
             self._incumbent_cost = cost
@@ -51,6 +60,7 @@ class _CollectCallback(Callback):
         self.results.append(TrialResult(
             trial=self._trial_offset + len(self.results) + 1,
             config=config,
+            scores=all_scores,
             score=score,
             incumbent_score=1.0 - self._incumbent_cost,
             incumbent_config=self._incumbent_config or config,
@@ -63,8 +73,11 @@ class _CollectCallback(Callback):
 class SMACOptimizer(BaseOptimizer):
     name = "SMAC (BlackBox)"
 
-    def optimize(self, model, X_train, y_train, X_val, y_val, metric_fn, n_trials,
-                 previous_result=None, seed: int = 0):
+    def optimize(self, model, X_train, y_train, X_val, y_val,
+                 metrics: dict, primary_metric: str,
+                 n_trials, previous_result=None, seed: int = 0):
+        scores_cache: dict = {}
+
         if previous_result is not None:
             output_dir = previous_result.metadata["smac_output_dir"]
             trial_offset = len(previous_result.trials)
@@ -74,19 +87,27 @@ class SMACOptimizer(BaseOptimizer):
                 trial_offset=trial_offset,
                 initial_best_cost=1.0 - previous_result.best_score,
                 initial_best_config=previous_result.best_config,
+                scores_cache=scores_cache,
+                primary_metric=primary_metric,
             )
         else:
             output_dir = tempfile.mkdtemp()
             overwrite = True
-            callback = _CollectCallback(target_new_trials=n_trials)
+            callback = _CollectCallback(
+                target_new_trials=n_trials,
+                scores_cache=scores_cache,
+                primary_metric=primary_metric,
+            )
 
         _seed = seed  # capture before SMAC overwrites the `seed` kwarg
 
         def target_fn(config, seed: int = 0) -> float:
-            score = model.train_evaluate(
-                dict(config), X_train, y_train, X_val, y_val, metric_fn, seed=_seed
+            config_dict = dict(config)
+            all_scores = model.train_evaluate(
+                config_dict, X_train, y_train, X_val, y_val, metrics, seed=_seed
             )
-            return 1.0 - score  # SMAC minimises cost
+            scores_cache[tuple(sorted(config_dict.items()))] = all_scores
+            return 1.0 - all_scores[primary_metric]
 
         scenario = Scenario(
             model.get_config_space(seed=seed),
@@ -105,12 +126,18 @@ class SMACOptimizer(BaseOptimizer):
         incumbent = smac.intensifier.get_incumbent()
 
         all_trials = (previous_result.trials if previous_result else []) + callback.results
-        hp_importance, hp_warning = self.compute_hp_importance(
-            model.get_config_space(seed=seed), all_trials, seed=seed
-        )
+
+        config_space = model.get_config_space(seed=seed)
+        hp_importance = {}
+        hp_warning = {}
+        for metric_name in metrics:
+            imp, warn = self.compute_hp_importance(config_space, all_trials, metric_name, seed=seed)
+            hp_importance[metric_name] = imp
+            hp_warning[metric_name] = warn
 
         return OptimizationResult(
             trials=all_trials,
+            primary_metric=primary_metric,
             best_config=dict(incumbent),
             best_score=max((r.score for r in all_trials), default=0.0),
             hyperparameter_importance=hp_importance,

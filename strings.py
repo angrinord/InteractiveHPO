@@ -25,6 +25,9 @@ _data: dict = json.loads(
 _en: dict[str, str] = _data.get("en", {})
 
 
+LOCALES: dict[str, str] = {"English": "en", "Deutsch": "de", "Español": "es"}
+
+
 def get_strings(locale: str = "en") -> dict[str, str]:
     """Return strings for *locale*, falling back to English for missing keys."""
     active: dict[str, str] = _data.get(locale, {})

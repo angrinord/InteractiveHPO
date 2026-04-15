@@ -1,5 +1,5 @@
 # TODO
-- [ ] Fix sidebar experiment selection behavior
+- [x] Fix sidebar experiment selection behavior
   - The behavior depicting which experiment is selected is buggy
 - [ ] Add test of consistent run behavior
   - Add a test that running an experiment with the same seed and configuration gives same results
@@ -8,9 +8,9 @@
   - Instead of just checking the models folder, user should also be able to provide path to a model file
   - File should be validated to adhere to base.py before experiment is created
 - [ ] Add options to define test split behavior
-- [ ] Add a button to re-evaluate experiment against different performance metric
+- [x] Add a button to re-evaluate experiment against different performance metric
 - [ ] Selected hyperparameters should reset when you click outside of experiment
 - [ ] Instead of "Score" always say <metric> score (e.g. f1 score)
 - [ ] Add dockerfile and write build/install instructions
-- [ ] Less empty space at top of page
-- [ ] Pull at least some of the logic out of app.py and create a helper/utils.py
+- [x] Less empty space at top of page
+- [x] Pull at least some of the logic out of app.py and create a helper/utils.py
