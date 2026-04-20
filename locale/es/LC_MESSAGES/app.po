@@ -1,0 +1,222 @@
+# Spanish translations for InteractiveHPO
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es\n"
+
+msgid "AutoML Tuner"
+msgstr "AutoML Tuner"
+
+msgid "{name}: %{{customdata[{index}]}}<br>"
+msgstr "{name}: %{{customdata[{index}]}}<br>"
+
+msgid "Use the sidebar to create a new experiment."
+msgstr "Usa la barra lateral para crear un nuevo experimento."
+
+msgid "Experiments"
+msgstr "Experimentos"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "＋ New"
+msgstr "＋ Nuevo"
+
+msgid "New experiment"
+msgstr "Nuevo experimento"
+
+msgid "Experiment name"
+msgstr "Nombre del experimento"
+
+msgid "Dataset (CSV – last column = target)"
+msgstr "Conjunto de datos (CSV – última columna = objetivo)"
+
+msgid "Model"
+msgstr "Modelo"
+
+msgid "Demo Model"
+msgstr "Modelo de demostración"
+
+msgid "Optimizer"
+msgstr "Optimizador"
+
+msgid "Metric"
+msgstr "Métrica"
+
+msgid "Seed (negative = random)"
+msgstr "Semilla (negativa = aleatoria)"
+
+msgid "Create"
+msgstr "Crear"
+
+msgid "Please enter an experiment name."
+msgstr "Por favor, introduce un nombre para el experimento."
+
+msgid "'{name}' already exists."
+msgstr "'{name}' ya existe."
+
+msgid "Please select a dataset."
+msgstr "Por favor, selecciona un conjunto de datos."
+
+msgid "Dataset not found: '{path}'"
+msgstr "Conjunto de datos no encontrado: '{path}'"
+
+msgid "Browse…"
+msgstr "Explorar…"
+
+msgid "Original dataset '{name}' could not be found — please upload it:"
+msgstr "El conjunto de datos original '{name}' no se encontró — por favor, súbelo:"
+
+msgid "Model '{model}' is not available — please select one:"
+msgstr "El modelo '{model}' no está disponible — por favor, selecciona uno:"
+
+msgid "Experiment: {name}"
+msgstr "Experimento: {name}"
+
+msgid "Model: **{model}** · Optimizer: **{optimizer}** · Metric: **{metric}** · Seed: **{seed}**"
+msgstr "Modelo: **{model}** · Optimizador: **{optimizer}** · Métrica: **{metric}** · Semilla: **{seed}**"
+
+msgid "🗑 Delete"
+msgstr "🗑 Eliminar"
+
+msgid "Delete experiment"
+msgstr "Eliminar experimento"
+
+msgid "Are you sure you want to delete '{name}'? This cannot be undone."
+msgstr "¿Estás seguro de que quieres eliminar '{name}'? Esta acción no se puede deshacer."
+
+msgid "Delete"
+msgstr "Eliminar"
+
+msgid "Number of trials"
+msgstr "Número de pruebas"
+
+msgid "Evaluation metric"
+msgstr "Métrica de evaluación"
+
+msgid "▶ Run"
+msgstr "▶ Ejecutar"
+
+msgid "⚖️ Reevaluate"
+msgstr "⚖️ Reevaluar"
+
+msgid "Evaluate with {metric}"
+msgstr "Evaluar con {metric}"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Optimization metric changed"
+msgstr "Métrica de optimización cambiada"
+
+msgid "The evaluation metric has been changed from the original ({original}). Do you want to optimize with respect to the selected metric? ({new})"
+msgstr "La métrica de evaluación ha sido cambiada respecto al original ({original}). ¿Desea optimizar con respecto a la métrica seleccionada? ({new})"
+
+msgid "Inconsistent"
+msgstr "Inconsistente"
+
+msgid "Optimizing…"
+msgstr "Optimizando…"
+
+msgid "Set the number of trials and click **▶ Run**."
+msgstr "Establece el número de pruebas y haz clic en **▶ Ejecutar**."
+
+msgid "All {n} available configurations have been evaluated. No further trials are possible."
+msgstr "Todas las {n} configuraciones disponibles han sido evaluadas. No es posible realizar más pruebas."
+
+msgid "Optimizer settings"
+msgstr "Configuración del optimizador"
+
+msgid "Best configuration"
+msgstr "Mejor configuración"
+
+msgid "Selected configuration"
+msgstr "Configuración seleccionada"
+
+msgid "Best overall (Trial {trial})"
+msgstr "Mejor resultado global (Prueba {trial})"
+
+msgid "score"
+msgstr "Puntuación"
+
+msgid "Trial {trial} — click any point on the graph to select"
+msgstr "Prueba {trial} — haz clic en un punto del gráfico para seleccionar"
+
+msgid "Hyperparameter"
+msgstr "Hiperparámetro"
+
+msgid "Value"
+msgstr "Valor"
+
+msgid "Hyperparameter importance (HyperSHAP)"
+msgstr "Importancia de hiperparámetros (HyperSHAP)"
+
+msgid "No importance data available."
+msgstr "No hay datos de importancia disponibles."
+
+msgid "Performance of Incumbent"
+msgstr "Rendimiento del Incumbente"
+
+msgid "Trial"
+msgstr "Prueba"
+
+msgid "Trial score"
+msgstr "Puntuación de prueba"
+
+msgid "Incumbent"
+msgstr "Incumbente"
+
+msgid "Trial: %{{x}}<br>Score: %{{y:.4f}}<br><b>Hyperparameters</b><br>{hp_rows}<extra></extra>"
+msgstr "Prueba: %{{x}}<br>Puntuación: %{{y:.4f}}<br><b>Hiperparámetros</b><br>{hp_rows}<extra></extra>"
+
+msgid "Trial: %{x}<br>Incumbent: %{y:.4f}<extra></extra>"
+msgstr "Prueba: %{x}<br>Incumbente: %{y:.4f}<extra></extra>"
+
+msgid "Dataset unavailable — provide it below to run further trials."
+msgstr "Conjunto de datos no disponible — proporciónalo a continuación para ejecutar más pruebas."
+
+msgid "Load dataset"
+msgstr "Cargar conjunto de datos"
+
+msgid "Load without dataset"
+msgstr "Cargar sin conjunto de datos"
+
+msgid "Use demo models"
+msgstr "Usar modelos de demostración"
+
+msgid "Model path (.py)"
+msgstr "Ruta del modelo (.py)"
+
+msgid "Please provide a model path or enable demo models."
+msgstr "Por favor, proporciona una ruta de modelo o activa los modelos de demostración."
+
+msgid "Using custom model: '{name}'"
+msgstr "Usando modelo personalizado: '{name}'"
+
+msgid "Custom model '{path}' could not be found — locate it or load read-only:"
+msgstr "El modelo personalizado '{path}' no se encontró — localízalo o carga en modo de solo lectura:"
+
+msgid "Custom model unavailable — provide it below to run further trials."
+msgstr "Modelo personalizado no disponible — proporciónalo a continuación para ejecutar más pruebas."
+
+msgid "Load model"
+msgstr "Cargar modelo"
+
+msgid "📂 Load"
+msgstr "📂 Cargar"
+
+msgid "Load experiment"
+msgstr "Cargar experimento"
+
+msgid "Experiment file (.ihpo)"
+msgstr "Archivo de experimento (.ihpo)"
+
+msgid "Load"
+msgstr "Cargar"
+
+msgid "Invalid or unreadable experiment file."
+msgstr "Archivo de experimento inválido o ilegible."
+
+msgid "Unknown metric '{metric}'."
+msgstr "Métrica desconocida '{metric}'."

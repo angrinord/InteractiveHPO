@@ -2,10 +2,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from utils.strings import S
 
-# Displays a graph of each trials' performance against the displayed metric
-def performance(name, result, selected_idx, sel_key, S, display_metric):
-    st.subheader(S["subheader_performance"])
+
+def performance(name, result, selected_idx, sel_key, display_metric):
+    st.subheader(S("subheader_performance"))
     trials = result.trials
     params = list(trials[0].config.keys()) if trials else []
 
@@ -23,9 +24,9 @@ def performance(name, result, selected_idx, sel_key, S, display_metric):
 
     # Build a hover template with one line per hyperparameter
     hp_rows = "".join(
-        S["hover_hp_row"].format(name=p, index=i) for i, p in enumerate(params)
+        S("hover_hp_row").format(name=p, index=i) for i, p in enumerate(params)
     )
-    hover_trial = S["hover_trial"].format(hp_rows=hp_rows)
+    hover_trial = S("hover_trial").format(hp_rows=hp_rows)
 
     df_trials = pd.DataFrame([
         {"Trial": t.trial, "Score": t.scores[display_metric], "Incumbent": inc}
@@ -40,19 +41,19 @@ def performance(name, result, selected_idx, sel_key, S, display_metric):
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=df_trials["Trial"], y=df_trials["Score"],
-        mode="markers", name=S["trace_trial_score"],
+        mode="markers", name=S("trace_trial_score"),
         marker=dict(size=marker_sizes, color=marker_colors, opacity=0.7),
         customdata=customdata,
         hovertemplate=hover_trial,
     ))
     fig.add_trace(go.Scatter(
         x=df_trials["Trial"], y=df_trials["Incumbent"],
-        mode="lines", name=S["trace_incumbent"],
+        mode="lines", name=S("trace_incumbent"),
         line=dict(width=2),
-        hovertemplate=S["hover_incumbent"],
+        hovertemplate=S("hover_incumbent"),
     ))
     fig.update_layout(
-        xaxis_title=S["axis_trial"],
+        xaxis_title=S("axis_trial"),
         yaxis_title=display_metric.capitalize(),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         margin=dict(t=40, b=40, l=40, r=20),

@@ -4,13 +4,18 @@
 - [ ] Add test of consistent run behavior
   - Add a test that running an experiment with the same seed and configuration gives same results
   - Add a test that running x trials then y more trials is same as running x+y trials
-- [ ] Allow passing model as file
+- [x] Allow passing model as file
   - Instead of just checking the models folder, user should also be able to provide path to a model file
   - File should be validated to adhere to base.py before experiment is created
 - [ ] Add options to define test split behavior
 - [x] Add a button to re-evaluate experiment against different performance metric
 - [ ] Selected hyperparameters should reset when you click outside of experiment
-- [ ] Instead of "Score" always say <metric> score (e.g. f1 score)
+- [x] Instead of "Score" always say \<metric\> score (e.g. f1 score)
 - [ ] Add dockerfile and write build/install instructions
 - [x] Less empty space at top of page
 - [x] Pull at least some of the logic out of app.py and create a helper/utils.py
+- [x] I think "_CollectCallback" is functionality that should be expressed in the interface of optimizers
+- [x] Should probably loop over analytics rather than hard coding their addition to experiment page
+- [x] Should probably use gettext instead of custom strings approach
+- [ ] Could use an interrupt to hpo runs
+- [x] Add saving experiment data functionality

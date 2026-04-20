@@ -1,0 +1,222 @@
+# German translations for InteractiveHPO
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
+
+msgid "AutoML Tuner"
+msgstr "AutoML Tuner"
+
+msgid "Experiment: {name}"
+msgstr "Experiment: {name}"
+
+msgid "Hyperparameter"
+msgstr "Hyperparameter"
+
+msgid "Incumbent"
+msgstr "Incumbent"
+
+msgid "{name}: %{{customdata[{index}]}}<br>"
+msgstr "{name}: %{{customdata[{index}]}}<br>"
+
+msgid "Use the sidebar to create a new experiment."
+msgstr "Erstellen Sie über die Seitenleiste ein neues Experiment."
+
+msgid "Experiments"
+msgstr "Experimente"
+
+msgid "Language"
+msgstr "Sprache"
+
+msgid "＋ New"
+msgstr "＋ Neues"
+
+msgid "New experiment"
+msgstr "Neues Experiment"
+
+msgid "Experiment name"
+msgstr "Experimentname"
+
+msgid "Dataset (CSV – last column = target)"
+msgstr "Datensatz (CSV – letzte Spalte = Zielvariable)"
+
+msgid "Model"
+msgstr "Modell"
+
+msgid "Demo Model"
+msgstr "Demo-Modell"
+
+msgid "Optimizer"
+msgstr "Optimierer"
+
+msgid "Metric"
+msgstr "Metrik"
+
+msgid "Seed (negative = random)"
+msgstr "Seed (negativ = zufällig)"
+
+msgid "Create"
+msgstr "Erstellen"
+
+msgid "Please enter an experiment name."
+msgstr "Bitte geben Sie einen Experimentnamen ein."
+
+msgid "'{name}' already exists."
+msgstr "'{name}' existiert bereits."
+
+msgid "Please select a dataset."
+msgstr "Bitte wählen Sie einen Datensatz aus."
+
+msgid "Dataset not found: '{path}'"
+msgstr "Datensatz nicht gefunden: '{path}'"
+
+msgid "Browse…"
+msgstr "Durchsuchen…"
+
+msgid "Original dataset '{name}' could not be found — please upload it:"
+msgstr "Originaldatensatz '{name}' nicht gefunden – bitte hochladen:"
+
+msgid "Model '{model}' is not available — please select one:"
+msgstr "Modell '{model}' ist nicht verfügbar – bitte eines auswählen:"
+
+msgid "Model: **{model}** · Optimizer: **{optimizer}** · Metric: **{metric}** · Seed: **{seed}**"
+msgstr "Modell: **{model}** · Optimierer: **{optimizer}** · Metrik: **{metric}** · Seed: **{seed}**"
+
+msgid "🗑 Delete"
+msgstr "🗑 Löschen"
+
+msgid "Delete experiment"
+msgstr "Experiment löschen"
+
+msgid "Are you sure you want to delete '{name}'? This cannot be undone."
+msgstr "Möchten Sie '{name}' wirklich löschen? Dies kann nicht rückgängig gemacht werden."
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Number of trials"
+msgstr "Anzahl der Versuche"
+
+msgid "Evaluation metric"
+msgstr "Bewertungsmetrik"
+
+msgid "▶ Run"
+msgstr "▶ Starten"
+
+msgid "⚖️ Reevaluate"
+msgstr "⚖️ Neu bewerten"
+
+msgid "Evaluate with {metric}"
+msgstr "Auswerten mit {metric}"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Optimization metric changed"
+msgstr "Optimierungsmetrik geändert"
+
+msgid "The evaluation metric has been changed from the original ({original}). Do you want to optimize with respect to the selected metric? ({new})"
+msgstr "Die Bewertungsmetrik wurde gegenüber dem Original ({original}) geändert. Möchten Sie bezüglich der ausgewählten Metrik optimieren? ({new})"
+
+msgid "Inconsistent"
+msgstr "Inkonsistent"
+
+msgid "Optimizing…"
+msgstr "Optimierung läuft…"
+
+msgid "Set the number of trials and click **▶ Run**."
+msgstr "Legen Sie die Anzahl der Versuche fest und klicken Sie auf **▶ Starten**."
+
+msgid "All {n} available configurations have been evaluated. No further trials are possible."
+msgstr "Alle {n} verfügbaren Konfigurationen wurden ausgewertet. Weitere Versuche sind nicht möglich."
+
+msgid "Optimizer settings"
+msgstr "Optimierereinstellungen"
+
+msgid "Best configuration"
+msgstr "Beste Konfiguration"
+
+msgid "Selected configuration"
+msgstr "Ausgewählte Konfiguration"
+
+msgid "Best overall (Trial {trial})"
+msgstr "Bestes Gesamtergebnis (Versuch {trial})"
+
+msgid "score"
+msgstr "Bewertung"
+
+msgid "Trial {trial} — click any point on the graph to select"
+msgstr "Versuch {trial} — Klicken Sie auf einen Punkt im Diagramm zur Auswahl"
+
+msgid "Value"
+msgstr "Wert"
+
+msgid "Hyperparameter importance (HyperSHAP)"
+msgstr "Hyperparameter-Wichtigkeit (HyperSHAP)"
+
+msgid "No importance data available."
+msgstr "Keine Wichtigkeitsdaten verfügbar."
+
+msgid "Performance of Incumbent"
+msgstr "Leistung des Incumbents"
+
+msgid "Trial"
+msgstr "Versuch"
+
+msgid "Trial score"
+msgstr "Versuchsbewertung"
+
+msgid "Trial: %{{x}}<br>Score: %{{y:.4f}}<br><b>Hyperparameters</b><br>{hp_rows}<extra></extra>"
+msgstr "Versuch: %{{x}}<br>Bewertung: %{{y:.4f}}<br><b>Hyperparameter</b><br>{hp_rows}<extra></extra>"
+
+msgid "Trial: %{x}<br>Incumbent: %{y:.4f}<extra></extra>"
+msgstr "Versuch: %{x}<br>Incumbent: %{y:.4f}<extra></extra>"
+
+msgid "Dataset unavailable — provide it below to run further trials."
+msgstr "Datensatz nicht verfügbar — geben Sie ihn unten an, um weitere Versuche zu starten."
+
+msgid "Load dataset"
+msgstr "Datensatz laden"
+
+msgid "Load without dataset"
+msgstr "Ohne Datensatz laden"
+
+msgid "Use demo models"
+msgstr "Demo-Modelle verwenden"
+
+msgid "Model path (.py)"
+msgstr "Modellpfad (.py)"
+
+msgid "Please provide a model path or enable demo models."
+msgstr "Bitte geben Sie einen Modellpfad an oder aktivieren Sie Demo-Modelle."
+
+msgid "Using custom model: '{name}'"
+msgstr "Benutzerdefiniertes Modell wird verwendet: '{name}'"
+
+msgid "Custom model '{path}' could not be found — locate it or load read-only:"
+msgstr "Benutzerdefiniertes Modell '{path}' wurde nicht gefunden — suchen Sie es oder laden Sie schreibgeschützt:"
+
+msgid "Custom model unavailable — provide it below to run further trials."
+msgstr "Benutzerdefiniertes Modell nicht verfügbar — geben Sie es unten an, um weitere Versuche zu starten."
+
+msgid "Load model"
+msgstr "Modell laden"
+
+msgid "📂 Load"
+msgstr "📂 Laden"
+
+msgid "Load experiment"
+msgstr "Experiment laden"
+
+msgid "Experiment file (.ihpo)"
+msgstr "Experimentdatei (.ihpo)"
+
+msgid "Load"
+msgstr "Laden"
+
+msgid "Invalid or unreadable experiment file."
+msgstr "Ungültige oder unleserliche Experimentdatei."
+
+msgid "Unknown metric '{metric}'."
+msgstr "Unbekannte Metrik '{metric}'."

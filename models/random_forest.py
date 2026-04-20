@@ -1,7 +1,7 @@
 from ConfigSpace import ConfigurationSpace, Integer, Float
 from sklearn.ensemble import RandomForestClassifier
 
-from .base import BaseModel
+from models.base import BaseModel
 
 
 class RandomForestModel(BaseModel):

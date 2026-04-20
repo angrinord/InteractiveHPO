@@ -4,7 +4,7 @@ import tempfile
 from smac import Scenario, BlackBoxFacade
 from smac.callback import Callback
 
-from .base import BaseOptimizer, OptimizationResult, TrialResult
+from .base import BaseOptimizer, OptimizationResult, TrialCollector
 
 logging.getLogger("smac").setLevel(logging.WARNING)
 
@@ -14,89 +14,90 @@ logging.getLogger("smac").setLevel(logging.WARNING)
 _SMAC_MAX_TRIALS = 100_000
 
 
-class _CollectCallback(Callback):
-    """Captures per-trial results and stops SMAC after a fixed number of NEW trials.
+class _CollectCallback(TrialCollector, Callback):
+    """SMAC Callback that delegates trial recording to TrialCollector.
 
-    trial_offset        — trials already completed in previous runs, used to
-                          produce globally-sequential trial numbers.
-    target_new_trials   — stop SMAC (via smbo._stop) once this many NEW trials
-                          have been recorded in this run.
-    initial_best_cost   — best cost seen before this run, so incumbent_score is
-                          correct relative to the full history.
-    initial_best_config — config that produced initial_best_cost.
-    scores_cache        — dict populated by target_fn mapping config_key → scores dict.
-    primary_metric      — name of the primary metric (cost = 1 - scores[primary_metric]).
+    Adds only the SMAC-specific concerns: extracting the score from SMAC's
+    cost value, looking up all metric scores from the cache written by
+    target_fn, and signaling SMAC to stop once the trial target is reached.
+
+    scores_cache   — dict populated by target_fn mapping config_key → scores dict.
+    primary_metric — name of the primary metric (cost = 1 − scores[primary_metric]).
     """
 
     def __init__(
         self,
-        target_new_trials: int,
-        trial_offset: int = 0,
-        initial_best_cost: float = float("inf"),
-        initial_best_config: dict | None = None,
         scores_cache: dict | None = None,
         primary_metric: str = "",
+        cancel_event=None,
+        **kwargs,
     ):
-        self.results: list[TrialResult] = []
-        self._target_new_trials = target_new_trials
-        self._trial_offset = trial_offset
-        self._incumbent_cost = initial_best_cost
-        self._incumbent_config = initial_best_config
+        TrialCollector.__init__(self, **kwargs)
         self._scores_cache = scores_cache if scores_cache is not None else {}
         self._primary_metric = primary_metric
+        self._cancel_event = cancel_event
 
     def on_tell_end(self, smbo, info, value):
         cost = float(value.cost) if not isinstance(value.cost, float) else value.cost
         config = dict(info.config)
         score = 1.0 - cost
-
         config_key = tuple(sorted(config.items()))
         all_scores = self._scores_cache.get(config_key, {self._primary_metric: score})
-
-        if cost < self._incumbent_cost:
-            self._incumbent_cost = cost
-            self._incumbent_config = config
-
-        self.results.append(TrialResult(
-            trial=self._trial_offset + len(self.results) + 1,
-            config=config,
-            scores=all_scores,
-            score=score,
-            incumbent_score=1.0 - self._incumbent_cost,
-            incumbent_config=self._incumbent_config or config,
-        ))
-
-        if len(self.results) >= self._target_new_trials:
+        self.record(config, score, all_scores)
+        if self.done or (self._cancel_event and self._cancel_event.is_set()):
             smbo._stop = True
 
 
 class SMACOptimizer(BaseOptimizer):
     name = "SMAC (BlackBox)"
 
+    def _make_callback(
+        self,
+        target_new_trials: int,
+        trial_offset: int = 0,
+        initial_best_score: float = float("-inf"),
+        initial_best_config: dict | None = None,
+        scores_cache: dict | None = None,
+        primary_metric: str = "",
+        cancel_event=None,
+        **_,
+    ) -> TrialCollector:
+        return _CollectCallback(
+            target_new_trials=target_new_trials,
+            trial_offset=trial_offset,
+            initial_best_score=initial_best_score,
+            initial_best_config=initial_best_config,
+            scores_cache=scores_cache,
+            primary_metric=primary_metric,
+            cancel_event=cancel_event,
+        )
+
     def optimize(self, model, X_train, y_train, X_val, y_val,
                  metrics: dict, primary_metric: str,
-                 n_trials, previous_result=None, seed: int = 0):
+                 n_trials, previous_result=None, seed: int = 0, cancel_event=None):
         scores_cache: dict = {}
 
         if previous_result is not None:
             output_dir = previous_result.metadata["smac_output_dir"]
             trial_offset = len(previous_result.trials)
             overwrite = False
-            callback = _CollectCallback(
+            callback = self._make_callback(
                 target_new_trials=n_trials,
                 trial_offset=trial_offset,
-                initial_best_cost=1.0 - previous_result.best_score,
+                initial_best_score=previous_result.best_score,
                 initial_best_config=previous_result.best_config,
                 scores_cache=scores_cache,
                 primary_metric=primary_metric,
+                cancel_event=cancel_event,
             )
         else:
             output_dir = tempfile.mkdtemp()
             overwrite = True
-            callback = _CollectCallback(
+            callback = self._make_callback(
                 target_new_trials=n_trials,
                 scores_cache=scores_cache,
                 primary_metric=primary_metric,
+                cancel_event=cancel_event,
             )
 
         _seed = seed  # capture before SMAC overwrites the `seed` kwarg

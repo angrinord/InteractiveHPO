@@ -2,16 +2,21 @@ import streamlit as st
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 from models.random_forest import RandomForestModel
+from models.svm import SVMModel
 from optimizers.smac_optimizer import SMACOptimizer
-from strings import get_strings
+from optimizers.grid_optimizer import GridOptimizer
+from optimizers.random_optimizer import RandomOptimizer
 from app.app import start_app
 
 MODELS = {
     "Random Forest": RandomForestModel(),
+    "SVM Classifier": SVMModel(),
 }
 
 OPTIMIZERS = {
     "SMAC": SMACOptimizer(),
+    "Random Search": RandomOptimizer(),
+    "Grid Search": GridOptimizer(),
 }
 
 METRICS = {
@@ -29,8 +34,7 @@ def _init_state():
 
 def run():
     _init_state()
-    S = get_strings(st.session_state.locale)
-    start_app(S, MODELS, OPTIMIZERS, METRICS)
+    start_app(MODELS, OPTIMIZERS, METRICS)
 
 if __name__ == "__main__":
     run()
