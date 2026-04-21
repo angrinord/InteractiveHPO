@@ -5,8 +5,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: de\n"
 
-msgid "AutoML Tuner"
-msgstr "AutoML Tuner"
+msgid "Interactive HPO"
+msgstr "Interactive HPO"
 
 msgid "Experiment: {name}"
 msgstr "Experiment: {name}"

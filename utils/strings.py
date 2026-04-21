@@ -25,8 +25,8 @@ _LOCALE_DIR = Path(__file__).parent.parent / "locale"
 # and serve as gettext msgids in the .po catalogs.
 # Every entry here should have a corresponding msgid in each locale's app.po.
 _STRINGS: dict[str, str] = {
-    "page_title":   "AutoML Tuner",
-    "home_title":   "AutoML Tuner",
+    "page_title":   "Interactive HPO",
+    "home_title":   "Interactive HPO",
     "home_body":    "Use the sidebar to create a new experiment.",
 
     "sidebar_title":      "Experiments",

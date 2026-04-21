@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "interactive-hpo"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "smac>=2.3.1",
+    "hypershap>=0.0.6",
+    "streamlit>=1.45.1",
+    "plotly>=6.7.0",
+    "pandas>=2.3.3",
+    "scikit-learn>=1.8.0",
+    "numpy>=2.4.3",
+]
+
+[project.scripts]
+ihpo = "app.cli:main"
+
+[tool.setuptools]
+py-modules = ["run"]
+
+[tool.setuptools.packages.find]
+exclude = ["venv*", "test*"]
