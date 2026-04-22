@@ -37,6 +37,43 @@ from optimizers.base import OptimizationResult, TrialResult
 
 _VERSION = 1
 
+_TEST_DIR     = Path(__file__).parent.parent / "test"
+_DATASETS_DIR = Path(__file__).parent.parent / "datasets"
+_MODELS_DIR   = Path(__file__).parent.parent / "models"
+
+
+# ── Display / dataset helpers ─────────────────────────────────────────────────
+
+def has_display() -> bool:
+    """Return True if a display is available for native file picker dialogs."""
+    return bool(os.environ.get("DISPLAY"))
+
+
+def demo_datasets() -> dict[str, str]:
+    """Return {stem: path} for CSVs in test/ and datasets/.
+
+    Scanning both directories means files mounted to datasets/ at runtime
+    appear in the dropdown automatically alongside the bundled demo CSVs.
+    """
+    result: dict[str, str] = {}
+    for directory in (_TEST_DIR, _DATASETS_DIR):
+        if directory.exists():
+            for p in sorted(directory.glob("*.csv")):
+                result[p.stem] = str(p)
+    return result
+
+
+def mounted_models() -> dict[str, str]:
+    """Return {stem: path} for .py files in models/.
+
+    Files mounted to models/ at runtime appear in the dropdown automatically.
+    """
+    result: dict[str, str] = {}
+    if _MODELS_DIR.exists():
+        for p in sorted(_MODELS_DIR.glob("*.py")):
+            result[p.stem] = str(p)
+    return result
+
 
 # ── File picker ───────────────────────────────────────────────────────────────
 

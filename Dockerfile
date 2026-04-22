@@ -2,8 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyrfr-0.9.0-cp312-cp312-linux_x86_64.whl requirements.txt ./
+RUN pip install --no-cache-dir pyrfr-0.9.0-cp312-cp312-linux_x86_64.whl && \
+    pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 

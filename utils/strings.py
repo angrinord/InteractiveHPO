@@ -80,6 +80,9 @@ _STRINGS: dict[str, str] = {
     "btn_load_dataset":          "Load dataset",
     "btn_load_readonly":         "Load without dataset",
 
+    "checkbox_use_demo_datasets":       "Use demo datasets",
+    "field_demo_dataset":              "Demo Dataset",
+
     "checkbox_use_demo_models":        "Use demo models",
     "field_custom_model":              "Model path (.py)",
     "err_model_required":              "Please provide a model path or enable demo models.",

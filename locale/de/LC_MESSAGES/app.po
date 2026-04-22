@@ -47,6 +47,12 @@ msgstr "Modell"
 msgid "Demo Model"
 msgstr "Demo-Modell"
 
+msgid "Use demo datasets"
+msgstr "Demo-Datensätze verwenden"
+
+msgid "Demo Dataset"
+msgstr "Demo-Datensatz"
+
 msgid "Optimizer"
 msgstr "Optimierer"
 

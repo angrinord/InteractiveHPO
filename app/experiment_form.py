@@ -6,7 +6,7 @@ import streamlit as st
 from sklearn.model_selection import train_test_split
 
 from utils.strings import S
-from utils.io import pick_file, load_model_from_path
+from utils.io import pick_file, load_model_from_path, has_display, demo_datasets, mounted_models
 
 
 def _render_param(p):
@@ -31,54 +31,84 @@ def new_form(models, optimizers, metrics):
     )
     schema = optimizers[opt_key].params_schema
 
-    # Dataset path — native file picker populates the text input, which the
-    # user can also edit directly.
-    col_path, col_browse = st.columns([5, 1], vertical_alignment="bottom")
-    with col_path:
-        dataset_path = st.text_input(
-            S("field_dataset"),
-            value=st.session_state.get("_new_exp_dataset_path", ""),
-            placeholder="/path/to/data.csv",
-            key="_new_exp_dataset_input",
-        )
-    with col_browse:
-        if st.button(S("btn_browse"), key="_new_exp_dataset_browse", use_container_width=True):
-            picked = pick_file(filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
-            if picked:
-                st.session_state["_new_exp_dataset_path"] = picked
-                st.rerun()
-
-    # Model — custom path picker (required by default) with an optional demo-model
-    # selectbox that is enabled only when "Use demo models" is checked.
-    use_demo = st.checkbox(S("checkbox_use_demo_models"), key="_new_exp_use_demo")
-
-    col_custom, col_browse_mdl = st.columns([5, 1], vertical_alignment="bottom")
-    with col_custom:
-        custom_model_path = st.text_input(
-            S("field_custom_model"),
-            value=st.session_state.get("_new_exp_model_path", ""),
-            placeholder="/path/to/model.py",
-            key="_new_exp_model_input",
-            disabled=use_demo,
-        )
-    with col_browse_mdl:
-        if st.button(S("btn_browse"), key="_new_exp_model_browse",
-                     use_container_width=True, disabled=use_demo):
-            picked = pick_file(filetypes=[("Python files", "*.py"), ("All files", "*.*")])
-            if picked:
-                st.session_state["_new_exp_model_path"] = picked
-                st.rerun()
-    if not use_demo:
-        st.session_state["_new_exp_model_path"] = custom_model_path
-
-    selected_model_key = st.selectbox(
-        S("field_model"),
-        list(models.keys()),
-        index=None,
-        disabled=not use_demo,
-        key="_new_exp_model",
-        placeholder="Select a model…",
+    # Dataset — demo selectbox (forced when no display) or manual path + Browse.
+    _display_ok = has_display()
+    _demos = demo_datasets()
+    use_demo_ds = st.checkbox(
+        S("checkbox_use_demo_datasets"),
+        value=not _display_ok,
+        disabled=not _display_ok,
+        key="_new_exp_use_demo_ds",
     )
+
+    if use_demo_ds:
+        selected_demo_ds = st.selectbox(
+            S("field_demo_dataset"),
+            list(_demos.keys()),
+            index=None,
+            placeholder="Select a dataset…",
+            key="_new_exp_demo_ds",
+        )
+        dataset_path = _demos[selected_demo_ds] if selected_demo_ds else ""
+    else:
+        col_path, col_browse = st.columns([5, 1], vertical_alignment="bottom")
+        with col_path:
+            dataset_path = st.text_input(
+                S("field_dataset"),
+                value=st.session_state.get("_new_exp_dataset_path", ""),
+                placeholder="/path/to/data.csv",
+                key="_new_exp_dataset_input",
+            )
+        with col_browse:
+            if st.button(S("btn_browse"), key="_new_exp_dataset_browse",
+                         use_container_width=True, disabled=not _display_ok):
+                picked = pick_file(filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
+                if picked:
+                    st.session_state["_new_exp_dataset_path"] = picked
+                    st.rerun()
+
+    # Model — demo registry selectbox or custom file picker.
+    # Without a display, Browse is unavailable; fall back to mounted .py files.
+    use_demo = st.checkbox(S("checkbox_use_demo_models"), key="_new_exp_use_demo",
+                           value=not _display_ok, disabled=not _display_ok)
+
+    custom_model_path = ""
+    selected_model_key = None
+    if use_demo:
+        selected_model_key = st.selectbox(
+            S("field_model"),
+            list(models.keys()),
+            index=None,
+            key="_new_exp_model",
+            placeholder="Select a model…",
+        )
+    elif _display_ok:
+        col_custom, col_browse_mdl = st.columns([5, 1], vertical_alignment="bottom")
+        with col_custom:
+            custom_model_path = st.text_input(
+                S("field_custom_model"),
+                value=st.session_state.get("_new_exp_model_path", ""),
+                placeholder="/path/to/model.py",
+                key="_new_exp_model_input",
+            )
+        with col_browse_mdl:
+            if st.button(S("btn_browse"), key="_new_exp_model_browse",
+                         use_container_width=True):
+                picked = pick_file(filetypes=[("Python files", "*.py"), ("All files", "*.*")])
+                if picked:
+                    st.session_state["_new_exp_model_path"] = picked
+                    st.rerun()
+        st.session_state["_new_exp_model_path"] = custom_model_path
+    else:
+        _mounts = mounted_models()
+        selected_mounted_mdl = st.selectbox(
+            S("field_custom_model"),
+            list(_mounts.keys()),
+            index=None,
+            placeholder="Select a model…",
+            key="_new_exp_mounted_model",
+        )
+        custom_model_path = _mounts[selected_mounted_mdl] if selected_mounted_mdl else ""
 
     # Validate the custom model path if one was entered.
     custom_model = None

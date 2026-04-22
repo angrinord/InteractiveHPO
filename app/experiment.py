@@ -3,7 +3,7 @@ from pathlib import Path
 import streamlit as st
 from utils.strings import S
 from optimizers.base import OptimizationResult
-from utils.io import save as save_experiment, attach_dataset, attach_model, pick_file, load_model_from_path
+from utils.io import save as save_experiment, attach_dataset, attach_model, pick_file, load_model_from_path, has_display, mounted_models
 import app.analytics as analytics
 import app.dialogs as dialogs
 
@@ -84,7 +84,7 @@ def experiment(name: str):
     with ctrl_left:
         with st.container(border=True):
             if can_run:
-                with st.form("run_form"):
+                with st.form("run_form", border=False):
                     n_trials = st.number_input(
                         S("field_n_trials"), min_value=1, max_value=1000, value=30, step=5
                     )
@@ -98,22 +98,34 @@ def experiment(name: str):
                 if not model_available:
                     st.caption(S("info_model_readonly_mode"))
                     pending_mdl_key = f"{name}_pending_model_path"
-                    col_mp, col_mb = st.columns([5, 1], vertical_alignment="bottom")
-                    with col_mp:
-                        new_mdl_path = st.text_input(
+                    if has_display():
+                        col_mp, col_mb = st.columns([5, 1], vertical_alignment="bottom")
+                        with col_mp:
+                            new_mdl_path = st.text_input(
+                                S("field_custom_model"),
+                                value=st.session_state.get(pending_mdl_key,
+                                                            exp.get("model_path", "")),
+                                key=f"{name}_model_path_input",
+                            )
+                        with col_mb:
+                            if st.button(S("btn_browse"), key=f"{name}_browse_model"):
+                                picked = pick_file(filetypes=[("Python files", "*.py"),
+                                                              ("All files", "*.*")])
+                                if picked:
+                                    st.session_state[pending_mdl_key] = picked
+                                    st.rerun()
+                        st.session_state[pending_mdl_key] = new_mdl_path
+                    else:
+                        _mounts = mounted_models()
+                        sel = st.selectbox(
                             S("field_custom_model"),
-                            value=st.session_state.get(pending_mdl_key,
-                                                        exp.get("model_path", "")),
+                            list(_mounts.keys()),
+                            index=None,
+                            placeholder="Select a model…",
                             key=f"{name}_model_path_input",
                         )
-                    with col_mb:
-                        if st.button(S("btn_browse"), key=f"{name}_browse_model"):
-                            picked = pick_file(filetypes=[("Python files", "*.py"),
-                                                          ("All files", "*.*")])
-                            if picked:
-                                st.session_state[pending_mdl_key] = picked
-                                st.rerun()
-                    st.session_state[pending_mdl_key] = new_mdl_path
+                        new_mdl_path = _mounts[sel] if sel else ""
+                        st.session_state[pending_mdl_key] = new_mdl_path
                     mdl_file_exists = bool(new_mdl_path) and Path(new_mdl_path).is_file()
                     mdl_valid = False
                     if new_mdl_path and mdl_file_exists:
@@ -147,7 +159,8 @@ def experiment(name: str):
                             key=f"{name}_dataset_path_input",
                         )
                     with col_browse:
-                        if st.button(S("btn_browse"), key=f"{name}_browse_dataset"):
+                        if st.button(S("btn_browse"), key=f"{name}_browse_dataset",
+                                     disabled=not has_display()):
                             picked = pick_file(filetypes=[("CSV files", "*.csv"),
                                                           ("All files", "*.*")])
                             if picked:

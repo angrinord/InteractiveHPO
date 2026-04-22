@@ -17,6 +17,8 @@ from utils.io import (
     model_path_ok,
     load_model_from_path,
     pick_file,
+    has_display,
+    mounted_models,
 )
 
 
@@ -116,7 +118,8 @@ def open_load_dialog() -> None:
                 )
             with col_browse:
                 just_browsed = False
-                if st.button(S("btn_browse"), key="_load_dialog_browse"):
+                if st.button(S("btn_browse"), key="_load_dialog_browse",
+                             disabled=not has_display()):
                     picked = pick_file(filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
                     if picked:
                         st.session_state["_load_dialog_dataset_path"] = picked
@@ -139,24 +142,36 @@ def open_load_dialog() -> None:
         if stored_model_path:
             if not model_path_ok(snapshot):
                 st.warning(S("warn_load_model_path_missing").format(path=stored_model_path))
-                col_mp, col_mb = st.columns([5, 1], vertical_alignment="bottom")
-                with col_mp:
-                    override_model_path = st.text_input(
+                if has_display():
+                    col_mp, col_mb = st.columns([5, 1], vertical_alignment="bottom")
+                    with col_mp:
+                        override_model_path = st.text_input(
+                            S("field_custom_model"),
+                            value=st.session_state.get("_load_dialog_model_path",
+                                                        stored_model_path),
+                            key="_load_dialog_model_input",
+                        )
+                    with col_mb:
+                        just_browsed_model = False
+                        if st.button(S("btn_browse"), key="_load_dialog_model_browse"):
+                            picked = pick_file(filetypes=[("Python files", "*.py"), ("All files", "*.*")])
+                            if picked:
+                                st.session_state["_load_dialog_model_path"] = picked
+                                st.session_state["_load_pending_model_path"] = picked
+                                just_browsed_model = True
+
+                    if not just_browsed_model:
+                        st.session_state["_load_dialog_model_path"] = override_model_path
+                else:
+                    _mounts = mounted_models()
+                    sel = st.selectbox(
                         S("field_custom_model"),
-                        value=st.session_state.get("_load_dialog_model_path",
-                                                    stored_model_path),
+                        list(_mounts.keys()),
+                        index=None,
+                        placeholder="Select a model…",
                         key="_load_dialog_model_input",
                     )
-                with col_mb:
-                    just_browsed_model = False
-                    if st.button(S("btn_browse"), key="_load_dialog_model_browse"):
-                        picked = pick_file(filetypes=[("Python files", "*.py"), ("All files", "*.*")])
-                        if picked:
-                            st.session_state["_load_dialog_model_path"] = picked
-                            st.session_state["_load_pending_model_path"] = picked
-                            just_browsed_model = True
-
-                if not just_browsed_model:
+                    override_model_path = _mounts[sel] if sel else ""
                     st.session_state["_load_dialog_model_path"] = override_model_path
 
                 effective_model_path = st.session_state.get("_load_dialog_model_path", "")
