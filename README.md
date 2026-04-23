@@ -143,7 +143,7 @@ There is much more potential for useful analytics though, that I may explore lat
 
 #### Selectable Evaluation Metrics
 I defined a few metrics by which an HPO experiment can be evaluated, and allow users to freely switch between them.
-I had originally intended for this to be more along the lines of configuring the models objective function, but this was already useful.
+I had originally intended for this to be more along the lines of configuring the model's objective function, but this was already useful.
 All metrics are measured at each trial, and stored in the .ihpo; choosing to reevaluate just re-evaluates hyperparameter importance and the performance of each run in the analytics.
 
 #### Readable Experiment Files
