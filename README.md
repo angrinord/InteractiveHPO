@@ -56,7 +56,7 @@ pip install -r requirements.txt
 streamlit run run.py
 ```
 
-> **Note:** `smac` and `hypershap` are not available on conda-forge, so the `pip install` step is required even when using a conda environment.
+> **Note:** `smac` and `hypershap` are not available on conda-forge, so `pip install` is still required in conda.
 
 Then open [http://localhost:8501](http://localhost:8501) in your browser.
 
@@ -124,18 +124,61 @@ These .ihpo files are plaintext json for easy readability.
 ---
 
 ## Design Decisions
-
+The design decisions are split into functionality which I thought warranted mentioning, and features I will likely refactor in the future.
 ### Functionality
-//////////////////////////////////////////
+#### Iterative HPO
+The purpose of this software is to make HPO more interactive.
+This involves two things: the first being allowing users to run HPO in a step-wise fashion.
+This allows users to engage with the process as it is happening, rather than trying to analyze it after the fact.
 
-### Streamlit
+#### HPO Analytics
+The second is making the HPO more interpretable.
+By providing users with analytics about the process they may stop the process early if they notice something wrong, or alter the behavior of the process midway.
+The current analytics are sparse, showing estimates of hyperparameter importance, as well as the performance of different configurations of hyperparameters over the course of the optimization proces.
+even just these are helpful though, as hyperparameter importance can help researchers better understand their own model, and performance over trials can help them intuitively understand when to stop.
+There us much more potential for useful analytics though, that I may explore later.
+
+#### Selectable Evaluation Metrics
+I defined a few metrics by which an HPO experiment can be evaluated, and allow users to freely switch between them.
+I had originally intended for this to be more along the lines of configuring the models objective function, but this was already useful.
+All metrics are measured at each trial, and stored in the .ihpo; choosing to reevaluate just re-evaluates hyperparameter importance and the performance of each run in the analytics.
+
+#### Readable Experiment Files
+Rather than just pickling the experiment page object, experiment data is saved out as json files (.ihpo files) so they are program agnostic and human-readable.
+If the program can't find the model and/or dataset files when loading an .ihpo file, the experiment is still viewable within the software in read-only mode.
+
+#### Mutliple/Multi-threaded Experiments
+The user is free to create as many experiments as they like, and each experiment can be run without blocking the rest of the app because it is threaded.
+I ultimately envision the app being separated from the HPO threads entirely, with the HPO being runnable remotely and the app just acting as the interface.
+
+#### A Single Seed for Reproducible Experiments
+Every process shares a single seed which is stored in the experiment file.
+This was done for reproducibility.
+
+#### User-Defined Models
+Besides the demo models (Random Forest and SVM), users obviously need the ability to upload their own models for experiments.
+All they have to do is ensure their uploaded model implements the BaseModel interface, so the app knows how to run it.
+The app will also validate the uploaded file; looking for a class that implements the interface.
+There currently isn't a capacity the install model dependencies within the app, so users will have to do that themselves in whatever environment they have setup.
+There is a similar interface for optimizers, but I elected to not make that something a user upload themselves.
+
+#### Internationalization
+Strings are not hard-coded, but written into a dictionary in utils.strings.py.
+The default language is english, with german and spanish translations available.
+I'm actually not sure if I'm entirely happy with this approach, but its what I've settled on for now.
+
+---
+
+### Likely Refactors
+#### Streamlit
 I chose to use Streamlit because it seemed well-suited to building an application with a high level of functionality quickly, without requiring a significant amount of plumbing.  I enjoyed the excercise, but if I were to continue, I think I would switch to a framework with a little more structure.  I'm uncomfortable with the lack of any kind of enforcement or at least consideration for an architectural pattern.  For such a small project I don't think its vital, but as it grows in complexity I think strict delineation between model and view logic would become increasingly desirable.  I found myself already naturally gravitating towards such patterns as I worked, although there isn't any sort of routing mechanism; the app still just talks directly to the models and optimizers.
 
-### Docker
+#### Docker
 I made the decision to include instructions for building this within a docker container, and a dockerfile with which to do so.  This ended up bringing a couple of issues to the surface that will need to be resolved at some point.
 
 1. SMAC has a dependency on pyrfr that itself has a dependency on SWIG which can't be built on the common python-ubuntu images.  I'm still a little hazy on the specifics, but it seems like SMAC shouldn't actually need pyrfr anymore since its using sklearn's random forest model now, but seems to still have the dependancy.  Then, I read somewhere that you can actually get around this by using `python:3.12-slim-bookworm`, but I didn't verify and just gave up and put the wheel directly in the repo.  Probably not the best practice, but I was getting a little fed up with this whole thing.
 2. I wanted a way of uploading model and dataset files such that I could get the filepath to those files and store them in my .ihpo files later for ease of resuming experiments.  I realized I couldn't do that with st.file_uploader() and so switched to tkinter without thinking too much about it.  Then I realized that I can't use tkinter on an normal headless instances of linux since it has a dependence on x11 for pulling up the file browser.  This isn't an issue when running it locally, but within a docker container or running it remotely this wouldn't work.  I tried a some nonsense with mounting the local x11 sockets into the docker container before realizing the whole thing was stupid.  This lead me to better understand why st.file_uploader() couldn't get the filepath in the first place.
 
-### Filepaths
-////////////////////////////////
+#### Filepaths
+The way filepaths are currently saved as part of .ihpo files are absolute paths.
+I think I'll have to revert to using streamlit.file_uploader() and either require the user to re-enter the path to their model/dataset or find some other way of doing this.
