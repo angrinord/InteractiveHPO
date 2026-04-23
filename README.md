@@ -80,8 +80,8 @@ docker run -d -p 8501:8501 \
 
 Then open [http://localhost:8501](http://localhost:8501) in your browser.
 
-- Replace `/path/to/your/data` with a folder of CSV files — they appear automatically in the **Dataset** dropdown alongside the bundled iris and wine datasets.
-- Replace `/path/to/your/models` with a folder of `.py` model files — they appear automatically in the **Model** dropdown when not using the built-in demo models.
+- Replace `/path/to/your/data` with a folder of CSV files - they appear automatically in the **Dataset** dropdown alongside the bundled iris and wine datasets.
+- Replace `/path/to/your/models` with a folder of `.py` model files - they appear automatically in the **Model** dropdown when not using the built-in demo models.
 
 Either or both `-v` flags can be omitted if you don't need custom data or models.
 
@@ -137,6 +137,7 @@ By providing users with analytics about the process they may stop the process ea
 The current analytics are sparse, showing estimates of hyperparameter importance, as well as the performance of different configurations of hyperparameters over the course of the optimization process.
 Even just these are helpful though, as hyperparameter importance can help researchers better understand their own model, and performance over trials can help them intuitively understand when to stop.
 There is much more potential for useful analytics though, that I may explore later.
+> **Note:** The performance over trials graph will be misleading for any optimizer that incorporates some kind of early stopping(e.g. hyperband), since the model isn't trained to the same extent per trial.
 
 #### Selectable Evaluation Metrics
 I defined a few metrics by which an HPO experiment can be evaluated, and allow users to freely switch between them.
@@ -182,3 +183,21 @@ I made the decision to include instructions for building this within a docker co
 #### Filepaths
 The way filepaths are currently saved as part of .ihpo files are absolute paths.
 I think I'll have to revert to using streamlit.file_uploader() and either require the user to re-enter the path to their model/dataset or find some other way of doing this.
+
+---
+
+### Unimplemented(for now)
+#### Train/Test Split Controls
+There is currently now way to specify your train test split, IHPO just take the entire dataset and splits it 80/20.
+
+#### Regression Tests
+There are no unit tests or regression tests built into the app or its pipeline.
+
+#### Tunability and Other Metrics
+The only real analytics are HyperSHAP values and model performance using different hyperparameter configurations.
+
+#### Saving Model Parameters
+There's no mechanism for saving model parameters after a trial.
+
+#### Other Optmizers/Optimizer configuration
+The only optimizers implemented are SMAC, grid search, and random search.  I did include a mechanism for specifying optimizer parameters in the experiment form, but right now that's only used for the step control for numeric hyperparameters of grid search.
