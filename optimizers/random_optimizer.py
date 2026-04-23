@@ -1,6 +1,6 @@
 from .base import BaseOptimizer, OptimizationResult, TrialCollector
 
-_MAX_CONSECUTIVE_DUPES = 200  # give up adding new trials after this many repeated samples
+_MAX_CONSECUTIVE_DUPES = 200  # give up after this many consecutive duplicate samples
 
 
 class RandomOptimizer(BaseOptimizer):

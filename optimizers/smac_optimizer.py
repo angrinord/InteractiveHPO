@@ -8,9 +8,7 @@ from .base import BaseOptimizer, OptimizationResult, TrialCollector
 
 logging.getLogger("smac").setLevel(logging.WARNING)
 
-# Fixed trial budget used in every Scenario so the saved scenario hash never
-# changes between runs.  Actual stopping is controlled by the callback, so
-# SMAC always sees an identical scenario on resume and loads history cleanly.
+# Fixed budget keeps the Scenario hash stable across runs; the callback controls actual stopping.
 _SMAC_MAX_TRIALS = 100_000
 
 

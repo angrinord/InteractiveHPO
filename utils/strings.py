@@ -20,10 +20,8 @@ from pathlib import Path
 
 _LOCALE_DIR = Path(__file__).parent.parent / "locale"
 
-# Registry of all user-facing strings.
-# Keys are the symbolic identifiers used in code; values are the English text
-# and serve as gettext msgids in the .po catalogs.
-# Every entry here should have a corresponding msgid in each locale's app.po.
+# Keys are symbolic identifiers; values are English text and gettext msgids.
+# Every entry needs a corresponding msgid in each locale's app.po.
 _STRINGS: dict[str, str] = {
     "page_title":   "Interactive HPO",
     "home_title":   "Interactive HPO",

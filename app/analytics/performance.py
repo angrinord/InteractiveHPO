@@ -10,7 +10,6 @@ def performance(name, result, selected_idx, sel_key, display_metric):
     trials = result.trials
     params = list(trials[0].config.keys()) if trials else []
 
-    # Recompute incumbents for the display metric
     incumbent = float("-inf")
     incumbent_scores = []
     for t in trials:
@@ -19,10 +18,8 @@ def performance(name, result, selected_idx, sel_key, display_metric):
             incumbent = s
         incumbent_scores.append(incumbent)
 
-    # One row of customdata per trial: the HP values in params order
     customdata = [[t.config.get(p) for p in params] for t in trials]
 
-    # Build a hover template with one line per hyperparameter
     hp_rows = "".join(
         S("hover_hp_row").format(name=p, index=i) for i, p in enumerate(params)
     )

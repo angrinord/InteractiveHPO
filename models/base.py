@@ -4,7 +4,6 @@ from ConfigSpace import ConfigurationSpace
 
 
 class BaseModel(ABC):
-    # Interface for models
     @property
     @abstractmethod
     def name(self) -> str: ...

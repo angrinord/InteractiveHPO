@@ -3,8 +3,7 @@ import streamlit as st
 from utils.strings import S, LOCALES
 import app.dialogs as dialogs
 
-# CSS-animated spinner rendered alongside a running experiment's button.
-# The keyframe name is prefixed to avoid collisions with other page styles.
+# CSS spinner; keyframe prefixed to avoid collisions with other page styles.
 _SPINNER = (
     '<style>@keyframes _sb_spin{to{transform:rotate(360deg)}}'
     '._sb_dot{width:14px;height:14px;border-radius:50%;'
