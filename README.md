@@ -57,6 +57,7 @@ streamlit run run.py
 ```
 
 > **Note:** `smac` and `hypershap` are not available on conda-forge, so `pip install` is still required in conda.
+> **Note:** It seems `smac` still has a dependency on `pyrfr` that is causing issues.  Must investigate further...
 
 Then open [http://localhost:8501](http://localhost:8501) in your browser.
 
@@ -124,7 +125,7 @@ These .ihpo files are plaintext json for easy readability.
 ---
 
 ## Design Decisions
-The design decisions are split into functionality which I thought warranted mentioning, and features I will likely refactor in the future.
+The design decisions are split into functionality which I thought warranted mentioning, features I will likely refactor, and features that should be implemented but aren't yet.
 ### Functionality
 #### Iterative HPO
 The purpose of this software is to make HPO more interactive.
@@ -161,7 +162,7 @@ Besides the demo models (Random Forest and SVM), users obviously need the abilit
 All they have to do is ensure their uploaded model implements the BaseModel interface, so the app knows how to run it.
 The app will also validate the uploaded file; looking for a class that implements the interface.
 There currently isn't a capacity to install model dependencies within the app, so users will have to do that themselves in whatever environment they have setup.
-There is a similar interface for optimizers, but I elected to not make that something a user upload themselves.
+There is a similar interface for optimizers, but I elected to not make that something a user uploads themselves.
 
 #### Internationalization
 Strings are not hard-coded, but written into a dictionary in utils.strings.py.
@@ -178,17 +179,18 @@ I chose to use Streamlit because it seemed well-suited to building an applicatio
 I made the decision to include instructions for building this within a docker container, and a dockerfile with which to do so.  This ended up bringing a couple of issues to the surface that will need to be resolved at some point.
 
 1. SMAC has a dependency on pyrfr that itself has a dependency on SWIG which can't be built on the common python-ubuntu images.  I'm still a little hazy on the specifics, but it seems like SMAC shouldn't actually need pyrfr anymore since its using sklearn's random forest model now, but seems to still have the dependency.  Then, I read somewhere that you can actually get around this by using `python:3.12-slim-bookworm`, but I didn't verify and just gave up and put the wheel directly in the repo.  Probably not the best practice, but I was getting a little fed up with this whole thing.
-2. I wanted a way of uploading model and dataset files such that I could get the filepath to those files and store them in my .ihpo files later for ease of resuming experiments.  I realized I couldn't do that with st.file_uploader() and so switched to tkinter without thinking too much about it.  Then I realized that I can't use tkinter on an normal headless instances of linux since it has a dependence on x11 for pulling up the file browser.  This isn't an issue when running it locally, but within a docker container or running it remotely this wouldn't work.  I tried some nonsense with mounting the local x11 sockets into the docker container before realizing the whole thing was stupid.  This lead me to better understand why st.file_uploader() couldn't get the filepath in the first place.
+2. I wanted a way of uploading model and dataset files such that I could get the filepath to those files and store them in my .ihpo files later for ease of resuming experiments.  I realized I couldn't do that with streamlit.file_uploader() and so switched to tkinter without thinking too much about it.  Then I realized that I can't use tkinter on an normal headless instances of linux since it has a dependence on x11 for pulling up the file browser.  This isn't an issue when running it locally, but within a docker container or running it remotely this wouldn't work.  I tried some nonsense with mounting the local x11 sockets into the docker container before realizing the whole thing was stupid.  This led me to better understand why streamlit.file_uploader() couldn't get the filepath in the first place.
 
 #### Filepaths
 The way filepaths are currently saved as part of .ihpo files are absolute paths.
 I think I'll have to revert to using streamlit.file_uploader() and either require the user to re-enter the path to their model/dataset or find some other way of doing this.
+It is obvious now why browser-based file uploading strips file paths, since they can include sensitive data about the system they come from.
 
 ---
 
 ### Unimplemented(for now)
 #### Train/Test Split Controls
-There is currently now way to specify your train test split, IHPO just take the entire dataset and splits it 80/20.
+There is currently no way to specify your train test split, IHPO just take the entire dataset and splits it 80/20.
 
 #### Regression Tests
 There are no unit tests or regression tests built into the app or its pipeline.
@@ -201,3 +203,6 @@ There's no mechanism for saving model parameters after a trial.
 
 #### Other Optmizers/Optimizer configuration
 The only optimizers implemented are SMAC, grid search, and random search.  I did include a mechanism for specifying optimizer parameters in the experiment form, but right now that's only used for the step control for numeric hyperparameters of grid search.
+
+#### Classification on CSVs only
+IHPO currently only supports classification models, and only on CSVs where the last column has the labels.  Obviously there will have to be options for regression and more types of datasets in the future.
