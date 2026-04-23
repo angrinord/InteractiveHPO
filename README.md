@@ -3,7 +3,7 @@
 ![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue)
 
 InteractiveHPO is a workbench for intuitively performing hyperparameter optimization on arbitrary models and datasets.
-It includes multiple metrics analytics tools for interpretability.
+It includes multiple analytics tools for interpretability.
 
 ![](./demo.png)
 
