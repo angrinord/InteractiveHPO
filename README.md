@@ -57,6 +57,7 @@ streamlit run run.py
 ```
 
 > **Note:** `smac` and `hypershap` are not available on conda-forge, so `pip install` is still required in conda.
+
 > **Note:** It seems `smac` still has a dependency on `pyrfr` that is causing issues.  Must investigate further...
 
 Then open [http://localhost:8501](http://localhost:8501) in your browser.
