@@ -1,10 +1,3 @@
-"""Streamlit dialogs for InteractiveHPO.
-
-Each public function opens the corresponding dialog by defining the decorated
-inner function at call time.  This defers the ``@st.dialog(S(...))`` evaluation
-to render time so that the locale is always resolved correctly.
-"""
-
 from pathlib import Path
 
 import streamlit as st
@@ -83,8 +76,7 @@ def open_load_dialog() -> None:
     """Open the load-experiment dialog."""
     @st.dialog(S("dialog_load_title"))
     def _dialog():
-        # Pre-seed text inputs from Browse picks made during the last render.
-        # Must happen before any widget is instantiated (Streamlit constraint).
+        # Must pre-seed before any widget is instantiated (Streamlit constraint).
         if "_load_pending_path" in st.session_state:
             st.session_state["_load_dialog_dataset_input"] = st.session_state.pop("_load_pending_path")
         if "_load_pending_model_path" in st.session_state:
@@ -189,7 +181,6 @@ def open_load_dialog() -> None:
                 else:
                     custom_model_ok = False
             else:
-                # Path exists — validate the file content up front.
                 _, model_err = load_model_from_path(stored_model_path)
                 if model_err:
                     st.error(model_err)

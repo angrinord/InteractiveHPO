@@ -8,20 +8,14 @@ from .base import BaseOptimizer, OptimizationResult, TrialCollector
 
 logging.getLogger("smac").setLevel(logging.WARNING)
 
-# Fixed trial budget used in every Scenario so the saved scenario hash never
-# changes between runs.  Actual stopping is controlled by the callback, so
-# SMAC always sees an identical scenario on resume and loads history cleanly.
+# Fixed budget keeps the Scenario hash stable across runs; the callback controls actual stopping.
 _SMAC_MAX_TRIALS = 100_000
 
 
 class _CollectCallback(TrialCollector, Callback):
-    """SMAC Callback that delegates trial recording to TrialCollector.
+    """Bridges SMAC's Callback protocol and TrialCollector.
 
-    Adds only the SMAC-specific concerns: extracting the score from SMAC's
-    cost value, looking up all metric scores from the cache written by
-    target_fn, and signaling SMAC to stop once the trial target is reached.
-
-    scores_cache   — dict populated by target_fn mapping config_key → scores dict.
+    scores_cache   — dict populated by target_fn; maps config_key → scores dict.
     primary_metric — name of the primary metric (cost = 1 − scores[primary_metric]).
     """
 
@@ -49,6 +43,12 @@ class _CollectCallback(TrialCollector, Callback):
 
 
 class SMACOptimizer(BaseOptimizer):
+    """Bayesian optimization via SMAC's BlackBox facade.
+
+    Uses a Gaussian Process surrogate to guide trial selection, treating the
+    objective as a black box (no gradient or structural assumptions).
+    """
+
     name = "SMAC (BlackBox)"
 
     def _make_callback(

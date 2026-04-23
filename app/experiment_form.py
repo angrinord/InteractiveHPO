@@ -22,8 +22,7 @@ def _render_param(p):
 def new_form(models, optimizers, metrics):
     st.header(S("new_experiment_header"))
 
-    # Optimizer selector lives outside the form so that switching it immediately
-    # refreshes the parameter fields without requiring a submit.
+    # Lives outside the form so switching it immediately refreshes parameter fields without a submit.
     opt_key = st.selectbox(
         S("field_optimizer"),
         list(optimizers.keys()),
@@ -67,8 +66,7 @@ def new_form(models, optimizers, metrics):
                     st.session_state["_new_exp_dataset_path"] = picked
                     st.rerun()
 
-    # Model — demo registry selectbox or custom file picker.
-    # Without a display, Browse is unavailable; fall back to mounted .py files.
+    # Model — demo registry selectbox or custom file picker; falls back to mounted .py files without a display.
     use_demo = st.checkbox(S("checkbox_use_demo_models"), key="_new_exp_use_demo",
                            value=not _display_ok, disabled=not _display_ok)
 
@@ -110,7 +108,6 @@ def new_form(models, optimizers, metrics):
         )
         custom_model_path = _mounts[selected_mounted_mdl] if selected_mounted_mdl else ""
 
-    # Validate the custom model path if one was entered.
     custom_model = None
     if not use_demo and custom_model_path:
         custom_model, model_err = load_model_from_path(custom_model_path)
@@ -188,7 +185,6 @@ def new_form(models, optimizers, metrics):
         model_name = custom_model.name
         model_path = str(Path(custom_model_path).resolve())
 
-    # Clear picker state so the next new-experiment form starts fresh.
     st.session_state.pop("_new_exp_dataset_path", None)
     st.session_state.pop("_new_exp_model_path", None)
 

@@ -20,8 +20,7 @@ class GridOptimizer(BaseOptimizer):
     """Exhaustive grid search over a discretized hyperparameter space.
 
     Continuous and large integer ranges are sampled into a fixed number of
-    evenly-spaced values.  Categorical and ordinal hyperparameters always use
-    their full value sets.  All valid combinations (respecting ConfigSpace
+    evenly-spaced values.  All valid combinations (respecting ConfigSpace
     conditions) are evaluated in order up to n_trials.  Resume skips configs
     already present in previous_result.
     """

@@ -5,6 +5,8 @@ from models.base import BaseModel
 
 
 class RandomForestModel(BaseModel):
+    """Demo model: sklearn RandomForestClassifier with a 4-parameter search space."""
+
     name = "Random Forest"
 
     def get_config_space(self, seed: int = 0) -> ConfigurationSpace:

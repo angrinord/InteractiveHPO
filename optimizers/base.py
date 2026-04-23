@@ -20,20 +20,22 @@ class TrialResult:
     trial: int
     config: Dict[str, Any]
     scores: Dict[str, float]    # score for every metric
-    score: float                # primary metric score (used internally by optimizer)
-    incumbent_score: float      # best primary metric score seen up to this trial
+    score: float                # primary metric score (used internally)
+    incumbent_score: float      # running incumbent score
     incumbent_config: Dict[str, Any]
 
 
 @dataclass
 class OptimizationResult:
+    """Accumulated results of a completed or partial optimization run."""
+
     trials: List[TrialResult]
     primary_metric: str
     best_config: Dict[str, Any]
     best_score: float
     hyperparameter_importance: Dict[str, Dict[str, float]]          # metric → {hp: importance}
     hyperparameter_importance_warning: Dict[str, Optional[str]]     # metric → warning or None
-    trials_limit: Optional[int] = None    # max trials this optimizer can produce; None = unlimited
+    trials_limit: Optional[int] = None    # None = unlimited; set by optimizers with a finite search space
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -100,6 +102,8 @@ class TrialCollector:
 
 
 class BaseOptimizer(ABC):
+    """Base class for all hyperparameter optimizers."""
+
     params_schema: List[OptimizerParam] = []
 
     @property
@@ -197,7 +201,6 @@ class BaseOptimizer(ABC):
         except Exception as e:
             warning = f"HyperSHAP failed ({e}) — falling back to surrogate feature importances."
 
-        # Fallback: train an RF on the trial data.
         try:
             from sklearn.ensemble import RandomForestRegressor
             X = np.array([cfg.get_array() for cfg, _ in data])

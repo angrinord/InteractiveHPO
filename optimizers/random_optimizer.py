@@ -1,14 +1,13 @@
 from .base import BaseOptimizer, OptimizationResult, TrialCollector
 
-_MAX_CONSECUTIVE_DUPES = 200  # give up adding new trials after this many repeated samples
+_MAX_CONSECUTIVE_DUPES = 200  # give up after this many consecutive duplicate samples
 
 
 class RandomOptimizer(BaseOptimizer):
     """Uniform random search over the hyperparameter space.
 
     Samples configurations independently at random using ConfigSpace's built-in
-    sampler.  Already-evaluated configurations (from previous_result) are
-    skipped.  No trials_limit — the space is treated as effectively infinite.
+    sampler.
     """
 
     name = "Random Search"

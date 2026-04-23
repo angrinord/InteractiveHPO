@@ -5,6 +5,8 @@ from models.base import BaseModel
 
 
 class SVMModel(BaseModel):
+    """Demo model: sklearn SVC with a 6-parameter search space."""
+
     name = "SVM Classifier"
 
     def get_config_space(self, seed: int = 0) -> ConfigurationSpace:
