@@ -1,0 +1,4 @@
+#!/bin/sh
+# Reject the push if any translations are missing.
+PYTHON=$([ -f venv/bin/python ] && echo venv/bin/python || echo python3)
+$PYTHON utils/check_translations.py

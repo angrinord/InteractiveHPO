@@ -111,31 +111,6 @@ class BaseOptimizer(ABC):
     def name(self) -> str: ...
 
     @abstractmethod
-    def _make_callback(
-        self,
-        target_new_trials: int,
-        trial_offset: int = 0,
-        initial_best_score: float = float("-inf"),
-        initial_best_config: Optional[Dict[str, Any]] = None,
-        cancel_event=None,
-        **kwargs,
-    ) -> TrialCollector:
-        """Return an optimizer-framework callback that is also a TrialCollector.
-
-        The returned object must:
-          - Be accepted as a callback by the underlying optimizer framework.
-          - Inherit from TrialCollector so that record(), done, and results work.
-          - Call self.record() each time a trial evaluation completes.
-          - Stop the optimizer once self.done is True.
-
-        The four named parameters map directly to TrialCollector.__init__.
-        Optimizer-specific constructor arguments (e.g. a scores_cache or a
-        primary metric name) should be passed via **kwargs and handled by the
-        concrete implementation.
-        """
-        ...
-
-    @abstractmethod
     def optimize(
         self,
         model,
@@ -148,6 +123,91 @@ class BaseOptimizer(ABC):
         seed: int = 0,
         cancel_event=None,
     ) -> OptimizationResult: ...
+
+    def serialize_result(self, result: "OptimizationResult") -> dict:
+        """Serialize result to a runhistory-mirrored dict with IHPO extensions.
+
+        Returns the dict stored under the ``result`` key in the .ihpo file.
+        The structure mirrors SMAC's runhistory.json at the top level, with
+        IHPO-specific fields (``scores``, ``incumbent_score``,
+        ``incumbent_config_id``) added to each data entry.
+
+        Optimizers with internal state to preserve (e.g. a surrogate model)
+        should override this and embed that state under ``optimizer_state``.
+        """
+        configs: Dict[str, Any] = {}
+        config_id_by_key: Dict[tuple, str] = {}
+
+        for t in result.trials:
+            cid = str(t.trial)
+            configs[cid] = t.config
+            config_id_by_key[tuple(sorted(t.config.items()))] = cid
+
+        data = []
+        for t in result.trials:
+            incumbent_key = tuple(sorted(t.incumbent_config.items()))
+            incumbent_cid = config_id_by_key.get(incumbent_key, str(t.trial))
+            data.append({
+                "config_id": t.trial,
+                "cost": 1.0 - t.score,
+                "scores": t.scores,
+                "incumbent_score": t.incumbent_score,
+                "incumbent_config_id": int(incumbent_cid),
+            })
+
+        best_key = tuple(sorted(result.best_config.items())) if result.best_config else ()
+        best_config_id = config_id_by_key.get(best_key) or (
+            str(result.trials[-1].trial) if result.trials else "0"
+        )
+
+        return {
+            "stats": {"submitted": len(result.trials), "finished": len(result.trials), "running": 0},
+            "data": data,
+            "configs": configs,
+            "config_origins": {str(t.trial): self.name for t in result.trials},
+            "optimizer_state": {},
+            "primary_metric": result.primary_metric,
+            "best_score": result.best_score,
+            "best_config_id": best_config_id,
+            "hyperparameter_importance": result.hyperparameter_importance,
+            "hyperparameter_importance_warning": result.hyperparameter_importance_warning,
+            "trials_limit": result.trials_limit,
+        }
+
+    def deserialize_result(self, d: dict) -> "OptimizationResult":
+        """Reconstruct an OptimizationResult from a runhistory-mirrored result dict.
+
+        Inverse of serialize_result.  Optimizers that override serialize_result
+        to embed extra state should override this to restore it.
+        """
+        configs = d.get("configs", {})
+        data = d.get("data", [])
+        primary_metric = d.get("primary_metric", "")
+
+        trials = []
+        for entry in data:
+            cid = str(entry["config_id"])
+            incumbent_cid = str(entry.get("incumbent_config_id", entry["config_id"]))
+            trials.append(TrialResult(
+                trial=entry["config_id"],
+                config=configs[cid],
+                scores=entry.get("scores", {primary_metric: 1.0 - entry["cost"]}),
+                score=1.0 - entry["cost"],
+                incumbent_score=entry.get("incumbent_score", 1.0 - entry["cost"]),
+                incumbent_config=configs.get(incumbent_cid, configs.get(cid, {})),
+            ))
+
+        best_config_id = str(d.get("best_config_id") or (str(trials[-1].trial) if trials else "0"))
+        return OptimizationResult(
+            trials=trials,
+            primary_metric=primary_metric,
+            best_config=configs.get(best_config_id, {}),
+            best_score=d.get("best_score", 0.0),
+            hyperparameter_importance=d.get("hyperparameter_importance", {}),
+            hyperparameter_importance_warning=d.get("hyperparameter_importance_warning", {}),
+            trials_limit=d.get("trials_limit"),
+            metadata={},
+        )
 
     def get_params(self) -> dict:
         """Return current optimizer parameters as ``{name: value}`` for each schema entry.

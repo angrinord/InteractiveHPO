@@ -34,24 +34,6 @@ class GridOptimizer(BaseOptimizer):
     def __init__(self, numeric_steps: int = _NUMERIC_STEPS):
         self._numeric_steps = numeric_steps
 
-    # ── BaseOptimizer interface ───────────────────────────────────────────────
-
-    def _make_callback(
-        self,
-        target_new_trials: int,
-        trial_offset: int = 0,
-        initial_best_score: float = float("-inf"),
-        initial_best_config: dict | None = None,
-        cancel_event=None,
-        **_,
-    ) -> TrialCollector:
-        return TrialCollector(
-            target_new_trials=target_new_trials,
-            trial_offset=trial_offset,
-            initial_best_score=initial_best_score,
-            initial_best_config=initial_best_config,
-        )
-
     def optimize(
         self,
         model,
@@ -83,7 +65,7 @@ class GridOptimizer(BaseOptimizer):
             if tuple(sorted(cfg.items())) not in evaluated
         ][:n_trials]
 
-        collector = self._make_callback(
+        collector = TrialCollector(
             target_new_trials=len(to_run),
             trial_offset=len(previous_result.trials) if previous_result else 0,
             initial_best_score=previous_result.best_score if previous_result else float("-inf"),

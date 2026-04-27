@@ -1,23 +1,27 @@
 """I/O utilities: native file picker and JSON-based experiment serialization.
 
 File format (.ihpo): UTF-8 JSON with the following top-level keys:
-    version          int
+    version          str   — application version string (e.g. "0.2.0"); legacy
+                             files may have an integer (1 or 2) from older formats
     name             str
-    model_name       str        — key in the MODELS registry (or the model's .name
-                                  property when a custom model file is used)
-    model_path       str        — absolute path to a custom model .py file, or ""
-                                  for registry models
-    optimizer_name   str        — optimizer.name (key in OPTIMIZERS registry)
-    optimizer_params dict       — {param_name: value} for each params_schema entry
+    model_name       str   — key in the MODELS registry (or the model's .name
+                             property when a custom model file is used)
+    model_path       str   — absolute path to a custom model .py file, or ""
+                             for registry models
+    optimizer_name   str   — optimizer.name (key in OPTIMIZERS registry)
+    optimizer_params dict  — {param_name: value} for each params_schema entry
     primary_metric   str | null
     original_metric  str | null
     metric_names     list[str]
     seed             int
-    dataset_path     str        — absolute path to the source CSV
+    dataset_path     str   — absolute path to the source CSV
     result           dict | null — serialized OptimizationResult
 
 The dataset arrays and model object are NOT stored.  On load, dataset_path and
 model_path are resolved from disk; missing files trigger the load-dialog pickers.
+
+Format detection uses field presence inside result ("data" vs "trials"), not the
+version string, so the schema stays readable across minor version bumps.
 """
 
 from __future__ import annotations
@@ -34,8 +38,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from optimizers.base import OptimizationResult, TrialResult
+from utils.version import VERSION as _VERSION
 
-_VERSION = 1
+# Integer version 1 is the legacy format written before VERSION was a string.
+_LEGACY_VERSIONS = (1,)
 
 _TEST_DIR     = Path(__file__).parent.parent / "test"
 _DATASETS_DIR = Path(__file__).parent.parent / "datasets"
@@ -168,30 +174,12 @@ def _json_default(obj: Any) -> Any:
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
-def _result_to_dict(result: OptimizationResult) -> dict:
-    return {
-        "trials": [
-            {
-                "trial":            t.trial,
-                "config":           t.config,
-                "scores":           t.scores,
-                "score":            t.score,
-                "incumbent_score":  t.incumbent_score,
-                "incumbent_config": t.incumbent_config,
-            }
-            for t in result.trials
-        ],
-        "primary_metric":                    result.primary_metric,
-        "best_config":                       result.best_config,
-        "best_score":                        result.best_score,
-        "hyperparameter_importance":         result.hyperparameter_importance,
-        "hyperparameter_importance_warning": result.hyperparameter_importance_warning,
-        "trials_limit":                      result.trials_limit,
-        "metadata":                          result.metadata,
-    }
+def _result_to_dict(result: OptimizationResult, optimizer) -> dict:
+    return optimizer.serialize_result(result)
 
 
-def _dict_to_result(d: dict) -> OptimizationResult:
+def _dict_to_result_v1(d: dict) -> OptimizationResult:
+    """Deserialize a version-1 result dict (flat trials-list format)."""
     trials = [
         TrialResult(
             trial=t["trial"],
@@ -213,6 +201,12 @@ def _dict_to_result(d: dict) -> OptimizationResult:
         trials_limit=d.get("trials_limit"),
         metadata=d.get("metadata", {}),
     )
+
+
+def _dict_to_result(d: dict, optimizer, version: int = _VERSION) -> OptimizationResult:
+    if version < 2 or "trials" in d:
+        return _dict_to_result_v1(d)
+    return optimizer.deserialize_result(d)
 
 
 def _load_splits(csv_path: Path, seed: int):
@@ -245,7 +239,7 @@ def save(name: str, exp: dict) -> bytes:
         "metric_names":     list(exp["metrics"].keys()),
         "seed":             exp["seed"],
         "dataset_path":     exp.get("dataset_path", ""),
-        "result":           _result_to_dict(exp["result"]) if exp["result"] is not None else None,
+        "result":           _result_to_dict(exp["result"], exp["optimizer"]) if exp["result"] is not None else None,
     }
     return json.dumps(snapshot, ensure_ascii=False, indent=2, default=_json_default).encode("utf-8")
 
@@ -261,7 +255,9 @@ def parse(data: bytes) -> dict:
     except Exception as exc:
         raise ValueError(f"not valid JSON: {exc}") from exc
 
-    if not isinstance(snapshot, dict) or snapshot.get("version") != _VERSION:
+    v = snapshot.get("version")
+    valid = isinstance(v, str) or v in _LEGACY_VERSIONS
+    if not isinstance(snapshot, dict) or not valid:
         raise ValueError("not a valid .ihpo file or unsupported version")
 
     for key in ("name", "model_name", "optimizer_name", "optimizer_params",
@@ -387,7 +383,7 @@ def build_experiment(
     metrics   = {m: available_metrics[m] for m in snapshot["metric_names"]}
     opt_type  = type(opt_entry)
     optimizer = opt_type(**snapshot.get("optimizer_params", {}))
-    result    = _dict_to_result(snapshot["result"]) if snapshot.get("result") else None
+    result    = _dict_to_result(snapshot["result"], optimizer, snapshot.get("version", 1)) if snapshot.get("result") else None
 
     exp = {
         "model":           model,

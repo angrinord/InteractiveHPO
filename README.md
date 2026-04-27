@@ -123,6 +123,34 @@ These .ihpo files are plaintext json for easy readability.
 
 ---
 
+## Contributing
+
+After cloning, run this once to enable the pre-push hook that checks translations before any push reaches GitHub:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+If translations are incomplete the push is blocked and the missing strings are printed.  The same check runs automatically in CI, so it will catch anything that slips through without the hook.
+
+### Adding or editing strings
+
+User-facing strings live in `utils/strings.py`.  After adding or changing a string:
+
+1. Add the key/value to `_STRINGS` and use `S("your_key")` at the call site.
+2. Run `python utils/check_translations.py` to see what needs translating.
+3. Add the `msgid`/`msgstr` pair to each locale's `.po` file under `locale/<lang>/LC_MESSAGES/app.po`.
+4. Recompile:
+   ```bash
+   msgfmt locale/de/LC_MESSAGES/app.po -o locale/de/LC_MESSAGES/app.mo
+   msgfmt locale/es/LC_MESSAGES/app.po -o locale/es/LC_MESSAGES/app.mo
+   ```
+
+`msgfmt` is part of GNU gettext (`sudo apt install gettext` / `brew install gettext`).  The compiled `.mo` files are committed alongside the `.po` sources.
+
+
+---
+
 ## Design Decisions
 The design decisions are split into functionality which I thought warranted mentioning, and features I will likely refactor in the future.
 ### Functionality

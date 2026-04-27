@@ -13,22 +13,6 @@ class RandomOptimizer(BaseOptimizer):
     name = "Random Search"
     params_schema = []
 
-    def _make_callback(
-        self,
-        target_new_trials: int,
-        trial_offset: int = 0,
-        initial_best_score: float = float("-inf"),
-        initial_best_config: dict | None = None,
-        cancel_event=None,
-        **_,
-    ) -> TrialCollector:
-        return TrialCollector(
-            target_new_trials=target_new_trials,
-            trial_offset=trial_offset,
-            initial_best_score=initial_best_score,
-            initial_best_config=initial_best_config,
-        )
-
     def optimize(
         self,
         model,
@@ -49,7 +33,7 @@ class RandomOptimizer(BaseOptimizer):
             evaluated = {tuple(sorted(t.config.items())) for t in previous_result.trials}
             trial_offset = len(previous_result.trials)
 
-        collector = self._make_callback(
+        collector = TrialCollector(
             target_new_trials=n_trials,
             trial_offset=trial_offset,
             initial_best_score=previous_result.best_score if previous_result else float("-inf"),

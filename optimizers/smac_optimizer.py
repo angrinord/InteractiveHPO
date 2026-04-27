@@ -1,45 +1,17 @@
+import json
 import logging
 import tempfile
+from pathlib import Path
 
 from smac import Scenario, BlackBoxFacade
-from smac.callback import Callback
+from smac.runhistory.dataclasses import TrialValue
 
-from .base import BaseOptimizer, OptimizationResult, TrialCollector
+from .base import BaseOptimizer, OptimizationResult, TrialCollector, TrialResult
 
 logging.getLogger("smac").setLevel(logging.WARNING)
 
-# Fixed budget keeps the Scenario hash stable across runs; the callback controls actual stopping.
+# Fixed budget keeps the Scenario hash stable across runs; the while-loop controls actual stopping.
 _SMAC_MAX_TRIALS = 100_000
-
-
-class _CollectCallback(TrialCollector, Callback):
-    """Bridges SMAC's Callback protocol and TrialCollector.
-
-    scores_cache   — dict populated by target_fn; maps config_key → scores dict.
-    primary_metric — name of the primary metric (cost = 1 − scores[primary_metric]).
-    """
-
-    def __init__(
-        self,
-        scores_cache: dict | None = None,
-        primary_metric: str = "",
-        cancel_event=None,
-        **kwargs,
-    ):
-        TrialCollector.__init__(self, **kwargs)
-        self._scores_cache = scores_cache if scores_cache is not None else {}
-        self._primary_metric = primary_metric
-        self._cancel_event = cancel_event
-
-    def on_tell_end(self, smbo, info, value):
-        cost = float(value.cost) if not isinstance(value.cost, float) else value.cost
-        config = dict(info.config)
-        score = 1.0 - cost
-        config_key = tuple(sorted(config.items()))
-        all_scores = self._scores_cache.get(config_key, {self._primary_metric: score})
-        self.record(config, score, all_scores)
-        if self.done or (self._cancel_event and self._cancel_event.is_set()):
-            smbo._stop = True
 
 
 class SMACOptimizer(BaseOptimizer):
@@ -51,64 +23,119 @@ class SMACOptimizer(BaseOptimizer):
 
     name = "SMAC (BlackBox)"
 
-    def _make_callback(
-        self,
-        target_new_trials: int,
-        trial_offset: int = 0,
-        initial_best_score: float = float("-inf"),
-        initial_best_config: dict | None = None,
-        scores_cache: dict | None = None,
-        primary_metric: str = "",
-        cancel_event=None,
-        **_,
-    ) -> TrialCollector:
-        return _CollectCallback(
-            target_new_trials=target_new_trials,
-            trial_offset=trial_offset,
-            initial_best_score=initial_best_score,
-            initial_best_config=initial_best_config,
-            scores_cache=scores_cache,
-            primary_metric=primary_metric,
-            cancel_event=cancel_event,
+    def serialize_result(self, result: OptimizationResult) -> dict:
+        output_dir = result.metadata.get("smac_output_dir", "")
+        root = Path(output_dir) if output_dir else None
+
+        if not root or not root.exists():
+            return super().serialize_result(result)
+
+        rh_files = list(root.rglob("runhistory.json"))
+        if not rh_files:
+            return super().serialize_result(result)
+
+        rh_path = rh_files[0]
+        rh = json.loads(rh_path.read_text(encoding="utf-8"))
+
+        trial_by_id = {t.trial: t for t in result.trials}
+        config_key_to_id = {
+            tuple(sorted(t.config.items())): str(t.trial) for t in result.trials
+        }
+
+        for entry in rh["data"]:
+            t = trial_by_id.get(entry["config_id"])
+            if t is not None:
+                entry["scores"] = t.scores
+                entry["incumbent_score"] = t.incumbent_score
+                incumbent_key = tuple(sorted(t.incumbent_config.items()))
+                entry["incumbent_config_id"] = int(
+                    config_key_to_id.get(incumbent_key, str(entry["config_id"]))
+                )
+
+        best_key = tuple(sorted(result.best_config.items())) if result.best_config else ()
+        best_config_id = config_key_to_id.get(best_key) or (
+            str(result.trials[-1].trial) if result.trials else "0"
         )
+
+        optimizer_state = {
+            f.relative_to(root).as_posix(): json.loads(f.read_text(encoding="utf-8"))
+            for f in sorted(root.rglob("*"))
+            if f.is_file() and f != rh_path
+        }
+
+        return {
+            "stats": rh["stats"],
+            "data": rh["data"],
+            "configs": rh["configs"],
+            "config_origins": rh.get("config_origins", {}),
+            "optimizer_state": optimizer_state,
+            "primary_metric": result.primary_metric,
+            "best_score": result.best_score,
+            "best_config_id": best_config_id,
+            "hyperparameter_importance": result.hyperparameter_importance,
+            "hyperparameter_importance_warning": result.hyperparameter_importance_warning,
+            "trials_limit": result.trials_limit,
+        }
+
+    def deserialize_result(self, d: dict) -> OptimizationResult:
+        optimizer_state = d.get("optimizer_state", {})
+
+        if not optimizer_state:
+            return super().deserialize_result(d)
+
+        output_dir = Path(tempfile.mkdtemp())
+        first_key = next(iter(optimizer_state))
+        subdir = "/".join(first_key.split("/")[:-1])
+        smac_dir = output_dir / Path(subdir)
+        smac_dir.mkdir(parents=True, exist_ok=True)
+
+        # Write runhistory.json; data entries include IHPO extensions which SMAC ignores.
+        (smac_dir / "runhistory.json").write_text(
+            json.dumps({
+                "stats": d.get("stats", {}),
+                "data": d.get("data", []),
+                "configs": d.get("configs", {}),
+                "config_origins": d.get("config_origins", {}),
+            }),
+            encoding="utf-8",
+        )
+
+        # Write remaining SMAC files; update scenario.json's output_directory to new path.
+        scenario_key = f"{subdir}/scenario.json"
+        for rel, content in optimizer_state.items():
+            dest = output_dir / Path(rel)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            if rel == scenario_key:
+                content = {**content, "output_directory": str(smac_dir)}
+            dest.write_text(json.dumps(content), encoding="utf-8")
+
+        result = super().deserialize_result(d)
+        result.metadata["smac_output_dir"] = str(output_dir)
+        return result
 
     def optimize(self, model, X_train, y_train, X_val, y_val,
                  metrics: dict, primary_metric: str,
                  n_trials, previous_result=None, seed: int = 0, cancel_event=None):
-        scores_cache: dict = {}
-
         if previous_result is not None:
-            output_dir = previous_result.metadata["smac_output_dir"]
+            stored_dir = previous_result.metadata.get("smac_output_dir", "")
             trial_offset = len(previous_result.trials)
-            overwrite = False
-            callback = self._make_callback(
-                target_new_trials=n_trials,
-                trial_offset=trial_offset,
-                initial_best_score=previous_result.best_score,
-                initial_best_config=previous_result.best_config,
-                scores_cache=scores_cache,
-                primary_metric=primary_metric,
-                cancel_event=cancel_event,
-            )
+            if stored_dir and Path(stored_dir).exists():
+                output_dir = stored_dir
+                overwrite = False
+            else:
+                output_dir = tempfile.mkdtemp()
+                overwrite = True
         else:
             output_dir = tempfile.mkdtemp()
+            trial_offset = 0
             overwrite = True
-            callback = self._make_callback(
-                target_new_trials=n_trials,
-                scores_cache=scores_cache,
-                primary_metric=primary_metric,
-                cancel_event=cancel_event,
-            )
 
-        _seed = seed  # capture before SMAC overwrites the `seed` kwarg
-
-        def target_fn(config, seed: int = 0) -> float:
-            config_dict = dict(config)
-            all_scores = model.train_evaluate(
-                config_dict, X_train, y_train, X_val, y_val, metrics, seed=_seed
-            )
-            scores_cache[tuple(sorted(config_dict.items()))] = all_scores
-            return 1.0 - all_scores[primary_metric]
+        collector = TrialCollector(
+            target_new_trials=n_trials,
+            trial_offset=trial_offset,
+            initial_best_score=previous_result.best_score if previous_result else float("-inf"),
+            initial_best_config=previous_result.best_config if previous_result else None,
+        )
 
         scenario = Scenario(
             model.get_config_space(seed=seed),
@@ -117,16 +144,26 @@ class SMACOptimizer(BaseOptimizer):
             seed=seed,
             output_directory=output_dir,
         )
-        smac = BlackBoxFacade(
-            scenario,
-            target_fn,
-            callbacks=[callback],
-            overwrite=overwrite,
-        )
-        smac.optimize()
-        incumbent = smac.intensifier.get_incumbent()
 
-        all_trials = (previous_result.trials if previous_result else []) + callback.results
+        def _unreachable(config, seed: int = 0) -> float:
+            raise RuntimeError("SMAC called target_function unexpectedly in ask/tell mode")
+
+        smac = BlackBoxFacade(scenario, _unreachable, overwrite=overwrite)
+
+        while not collector.done:
+            if cancel_event and cancel_event.is_set():
+                break
+            info = smac.ask()
+            config = dict(info.config)
+            all_scores = model.train_evaluate(
+                config, X_train, y_train, X_val, y_val, metrics, seed=seed
+            )
+            cost = 1.0 - all_scores[primary_metric]
+            smac.tell(info, TrialValue(cost=cost))
+            collector.record(config, all_scores[primary_metric], all_scores)
+
+        incumbent = smac.intensifier.get_incumbent()
+        all_trials = (previous_result.trials if previous_result else []) + collector.results
 
         config_space = model.get_config_space(seed=seed)
         hp_importance = {}
@@ -139,11 +176,11 @@ class SMACOptimizer(BaseOptimizer):
         return OptimizationResult(
             trials=all_trials,
             primary_metric=primary_metric,
-            best_config=dict(incumbent),
+            best_config=dict(incumbent) if incumbent else (all_trials[-1].config if all_trials else {}),
             best_score=max((r.score for r in all_trials), default=0.0),
             hyperparameter_importance=hp_importance,
             hyperparameter_importance_warning=hp_warning,
-            metadata={"smac_output_dir": output_dir},
+            metadata={"smac_output_dir": str(output_dir)},
         )
 
 
